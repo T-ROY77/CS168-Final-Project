@@ -14,7 +14,7 @@ const NUM_BYTES = 33;
 
 const SALT_BASE = "mnemonic";
 const NUM_PBKDF2_ROUNDS = 2048;
-const KEY_LENGTH = 33; // 33 bytes = 264 bits
+const KEY_LENGTH = 33; // 33 bytes = 264 bits == 24 word passphrase
 const PBKDF2_DIGEST = 'sha512'; // Should be 'hmac-sha512'
 
 /**
@@ -109,21 +109,36 @@ module.exports = class wallet {
 //generate 12 indices based on random seed(0-2047)
 //get 12 english words from array and 12 indices
 //each word is 11 bits
-//show client passphrase
-//this.wallet = new wallet();
+
         let key = crypto.pbkdf2Sync(this.password, SALT_BASE + Date.now().toString(), NUM_PBKDF2_ROUNDS, KEY_LENGTH, PBKDF2_DIGEST);
         this.seed = key.toString('hex');
 
         this.passPhrase = this.words();
 
-        console.log("passphrase for " + this.password);
-        console.log(this.passPhrase);
+        //show client passphrase
+        this.printPassphrase();
 
     }
 
 
     get derivedSeed(){
         return this.seed;
+    }
+
+    printPassphrase(){
+        console.log("passphrase for " + this.password);
+
+        let phrase = "";
+
+        let phraseArr = this.passPhrase.split(" ");
+        for(let i = 1; i < phraseArr.length; i++){
+            //console.log("" + i + ". " + phraseArr[i-1]);
+            phrase = phrase + "" + i + ". " + phraseArr[i-1] + "  ";
+            if(i%4 == 0){
+                phrase = phrase + "\n";
+            }
+        }
+        console.log(phrase);
     }
 
     calculateSequence(words) {
