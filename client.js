@@ -6,7 +6,9 @@ let Blockchain = require('./blockchain.js');
 
 let utils = require('./utils.js');
 
-let crypto = require('crypto');
+let wallet = require("./wallet");
+
+
 
 
 /**
@@ -71,21 +73,8 @@ module.exports = class Client extends EventEmitter {
 
 
     //set up wallet
-    //generate random 512 bit seed
-    // based on timestamp?
-    //generate 12 indices based on random seed(0-2047)
-    //get 12 english words from array and 12 indices
-    //each word is 11 bits
-    //show client passphrase
-    //this.wallet = new wallet();
-    crypto.pbkdf2(this.name, 'salt', 100000, 16,
-        'sha512', (err, derivedKey) => {
+    this.wallet = new wallet({password: this.name});
 
-          if (err) throw err;
-
-          // Prints derivedKey
-          console.log(derivedKey.toString('hex'));
-        });
   }
 
   /**
