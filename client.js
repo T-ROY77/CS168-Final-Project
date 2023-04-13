@@ -75,6 +75,7 @@ module.exports = class Client extends EventEmitter {
     //set up wallet
     this.wallet = new wallet({password: this.name});
 
+
   }
 
   /**
@@ -136,6 +137,8 @@ module.exports = class Client extends EventEmitter {
    * @returns {Transaction} - The posted transaction.
    */
   postTransaction(outputs, fee=Blockchain.DEFAULT_TX_FEE) {
+
+
     // We calculate the total value of gold needed.
     let totalPayments = outputs.reduce((acc, {amount}) => acc + amount, 0) + fee;
 
