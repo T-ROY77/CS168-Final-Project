@@ -75,6 +75,8 @@ module.exports = class Client extends EventEmitter {
     //set up wallet
     this.wallet = new wallet({password: this.name});
 
+    //verify wallet
+    this.wallet.verifyPassphrase();
 
   }
 

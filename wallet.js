@@ -109,6 +109,7 @@ module.exports = class wallet {
 
         //show client passphrase
         this.printPassphrase();
+        console.log(this.passphraseArr);
     }
 
 
@@ -129,7 +130,79 @@ module.exports = class wallet {
                 phrase = phrase + "\n";
             }
         }
+        this.passphraseArr = phraseArr;
         console.log(phrase);
+    }
+
+    //chooses 3 random words for the client to verify
+    //returns the status of the verification
+    verifyPassphrase(){
+        let verified = true;
+        let firstInput = "";
+        let secondInput = "";
+        let thirdInput = "";
+
+        let firstIndex = 0;
+        let secondIndex =0;
+        let thirdIndex = 0;
+
+        console.log("" + this.password + " must verify passphrase.");
+
+
+        //pick 3 random numbers 0-24
+        //firstIndex, secondIndex, thirdIndex
+        //check that indexes don't equal each other
+
+        while(firstIndex === secondIndex || secondIndex === thirdIndex || firstIndex === thirdIndex) {
+            firstIndex = Math.ceil(Math.random() * 24);
+            secondIndex = Math.ceil(Math.random() * 24);
+            thirdIndex = Math.ceil(Math.random() * 24);
+        }
+
+        //show user passphrase list with 3 numbers empty
+        let phrase = "";
+        let phraseArr = this.passPhrase.split(" ");
+        for(let i = 1; i < phraseArr.length; i++) {
+            if (i === firstIndex || i === secondIndex || i === thirdIndex) {
+                phrase = phrase + "" + i + ".      ";
+            }
+            else {
+            phrase = phrase + "" + i + ". " + phraseArr[i - 1] + " ";
+            }
+
+            if(i % 4 == 0){
+                phrase = phrase + "\n";
+            }
+        }
+        console.log(phrase);
+
+        //take UI
+        console.log("Enter word for number " + firstIndex + ". ");
+        //take UI
+        //firstInput = this.passphraseArr[firstIndex];
+
+        console.log("Enter word for number " + secondIndex + ". ");
+        //take UI
+        //secondInput = this.passphraseArr[secondIndex];
+
+
+        console.log("Enter word for number " + thirdIndex + ". ");
+        //take UI
+        //thirdInput = this.passphraseArr[thirdIndex];
+
+
+        //verify UI equals passphrase
+        if(firstInput !== this.passphraseArr[firstIndex]){
+            verified = false;
+        }
+        if(secondInput !== this.passphraseArr[secondIndex]){
+            verified = false;
+        }
+        if(thirdInput !== this.passphraseArr[thirdIndex]){
+            verified = false;
+        }
+        console.log(verified);
+        return verified;
     }
 
     // Returns a string with the sequence of words matching to the random sequence.
