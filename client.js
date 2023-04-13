@@ -78,7 +78,7 @@ module.exports = class Client extends EventEmitter {
     //each word is 11 bits
     //show client passphrase
     //this.wallet = new wallet();
-    crypto.pbkdf2('secret', 'salt', 100000, 16,
+    crypto.pbkdf2(this.name, 'salt', 100000, 16,
         'sha512', (err, derivedKey) => {
 
           if (err) throw err;
