@@ -18,7 +18,8 @@ const KEY_LENGTH = 33; // 33 bytes = 264 bits == 24 word passphrase
 const PBKDF2_DIGEST = 'sha512'; // Should be 'hmac-sha512'
 
 /**
- *
+ * A wallet has a passphrase and a seed which is generated from pbkdf2
+ * It can calculate the passphrase from the word list and show the client their personal passphrase
  */
 module.exports = class wallet {
 
@@ -86,106 +87,63 @@ module.exports = class wallet {
 
 
     /**
-     * The net object determines how the client communicates
-     * with other entities in the system. (This approach allows us to
-     * simplify our testing setup.)
+     * The password is used in the pbkdf function to calculate the random seed
      *
      * @constructor
      * @param {Object} obj - The properties of the client.
      * @param {String} [obj.password] - The client's password.
      */
     constructor({password} = {}) {
+
+        //setting the wordlist
         let content = fs.readFileSync(WORD_LIST_FILE);
         this.wordlist = JSON.parse(content);
 
         this.password = password;
 
-        // Creating the sequence
-        this.seq = Buffer.alloc(NUM_BYTES);
-        crypto.randomFillSync(this.seq, 0, NUM_BYTES);
+        // Creating the random sequence
+        this.seq = crypto.pbkdf2Sync(this.password, SALT_BASE + Date.now().toString(), NUM_PBKDF2_ROUNDS, KEY_LENGTH, PBKDF2_DIGEST);
 
-//generate random 512 bit seed
-// based on timestamp?
-//generate 12 indices based on random seed(0-2047)
-//get 12 english words from array and 12 indices
-//each word is 11 bits
-
-        let key = crypto.pbkdf2Sync(this.password, SALT_BASE + Date.now().toString(), NUM_PBKDF2_ROUNDS, KEY_LENGTH, PBKDF2_DIGEST);
-        this.seed = key.toString('hex');
-
+        // calculate passphrase
         this.passPhrase = this.words();
 
         //show client passphrase
         this.printPassphrase();
-
     }
 
 
     get derivedSeed(){
-        return this.seed;
+        return this.seq;
     }
 
+    //prints the passphrase stored in this.passphrase
     printPassphrase(){
-        console.log("passphrase for " + this.password);
+        console.log("Passphrase for " + this.password);
 
         let phrase = "";
 
         let phraseArr = this.passPhrase.split(" ");
         for(let i = 1; i < phraseArr.length; i++){
-            //console.log("" + i + ". " + phraseArr[i-1]);
             phrase = phrase + "" + i + ". " + phraseArr[i-1] + "  ";
-            if(i%4 == 0){
+            if(i % 4 == 0){
                 phrase = phrase + "\n";
             }
         }
         console.log(phrase);
     }
 
-    calculateSequence(words) {
-        let wordArray = words.split(' ');
-        // Extra byte for checksum
-        this.seq = Buffer.alloc(NUM_BYTES + 1);
-
-        //
-        // ***YOUR CODE HERE***
-        //
-        // Determine the string of bits from the specified words.
-        // Remember that each word translates to an 11-bit number,
-        // so conversion can be a little awkward.
-        //
-        // Using that string of bits, convert to bytes and write
-        // to the `this.seq` buffer.
-
-        let bits = "";
-
-        for(let i = 0; i < wordArray.length; i++){
-            bits = this.constructor.translate11bit(wordArray[i]);
-        }
-
-        this.seq.writeIntBE(this.constructor.convertBinStringToByte(bits));
-
-
-
-        //console.log(bits);
-        console.log(this.seq);
-
-    }
-
-    // Returns a string with the sequence of words matching to
-    // the random sequence.
+    // Returns a string with the sequence of words matching to the random sequence.
     words() {
         // Returns an array of 11-bit numbers.
         let arr = this.constructor.split(this.seq);
 
-
         // Convert 11-bit numbers to the corresponding words from the dictionary,
         // join together into a space-delimited string, and return the string.
-
         let passphrase = "";
-
         for(let i = 0; i < arr.length; i++){
             passphrase += this.wordlist[arr[i]] + " ";
         }
+
         return passphrase;
     }
 };
