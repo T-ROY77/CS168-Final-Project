@@ -23,7 +23,7 @@ const NUM_BYTES = 33;
 
 const SALT_BASE = "mnemonic";
 const NUM_PBKDF2_ROUNDS = 2048;
-const KEY_LENGTH = 33; // 33 bytes = 264 bits == 24 word passphrase
+const KEY_LENGTH = 33; // 33 bytes = 264 bits == 24 word passphrase + 8-bit checksum
 const PBKDF2_DIGEST = 'sha512';
 
 /**
@@ -110,7 +110,7 @@ module.exports = class wallet {
      * @param {Object} obj - The properties of the client.
      * @param {String} [obj.password] - The client's password.
      */
-    constructor({password, keypair} = {}) {
+    constructor({password} = {}) {
 
         //setting the wordlist
         let content = fs.readFileSync(WORD_LIST_FILE);
@@ -126,16 +126,15 @@ module.exports = class wallet {
         // calculate passphrase
         this.passPhrase = this.words();
 
-        //keypair
-        if (keypair === undefined) {
-            this.keyPair = utils.generateKeypair();
-        } else {
-            this.keyPair = keypair;
-        }
+        //keypair chain
+        this.keyPairChain = [];
+        this.keyPairChain.push(utils.generateKeypair());
+
+        //console.log(this.keyPairChain);
 
         //show client passphrase
         this.printPassphrase();
-        console.log(this.binKey);
+        //console.log(this.binKey);
 
         //verify wallet
         //this.verifyPassphrase();
@@ -161,87 +160,6 @@ module.exports = class wallet {
         }
         this.passphraseArr = phraseArr;
         console.log(phrase);
-    }
-
-    //chooses 3 random words for the client to verify
-    //returns the status of the verification
-    verifyPassphrase(){
-        let verified = true;
-        let firstInput = "";
-        let secondInput = "";
-        let thirdInput = "";
-
-        let firstIndex = 0;
-        let secondIndex =0;
-        let thirdIndex = 0;
-
-        console.log("" + this.password + " must verify passphrase.");
-
-
-        //pick 3 random numbers 0-24
-        //firstIndex, secondIndex, thirdIndex
-        //check that indexes don't equal each other
-
-        while(firstIndex === secondIndex || secondIndex === thirdIndex || firstIndex === thirdIndex) {
-            firstIndex = Math.ceil(Math.random() * 24);
-            secondIndex = Math.ceil(Math.random() * 24);
-            thirdIndex = Math.ceil(Math.random() * 24);
-        }
-
-        //show user passphrase list with 3 numbers empty
-        let phrase = "";
-        let phraseArr = this.passPhrase.split(" ");
-        for(let i = 1; i < phraseArr.length; i++) {
-            if (i === firstIndex || i === secondIndex || i === thirdIndex) {
-                phrase = phrase + "" + i + ".      ";
-            }
-            else {
-            phrase = phrase + "" + i + ". " + phraseArr[i - 1] + " ";
-            }
-
-            if(i % 4 == 0){
-                phrase = phrase + "\n";
-            }
-        }
-        console.log(phrase);
-
-        //take UI
-        //console.log("Enter word for number " + firstIndex + ". ");
-        //take UI
-        //firstInput = this.passphraseArr[firstIndex];
-
-        rl.question("Enter word for number " + firstIndex + ". ",  (string) => {
-            firstInput = string;
-            console.log("you entered: ${firstInput}");
-            // close input stream
-            rl.close();
-        });
-
-        console.log("Enter word for number " + secondIndex + ". ");
-        //take UI
-        //secondInput = this.passphraseArr[secondIndex];
-
-
-        console.log("Enter word for number " + thirdIndex + ". ");
-        //take UI
-        //thirdInput = this.passphraseArr[thirdIndex];
-
-
-        //verify UI equals passphrase
-        if(firstInput !== this.passphraseArr[firstIndex]){
-            verified = false;
-        }
-        if(secondInput !== this.passphraseArr[secondIndex]){
-            verified = false;
-        }
-        if(thirdInput !== this.passphraseArr[thirdIndex]){
-            verified = false;
-        }
-
-
-
-        console.log(verified);
-        return verified;
     }
 
     // Returns a string with the sequence of words matching to the random sequence.

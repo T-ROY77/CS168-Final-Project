@@ -82,7 +82,7 @@ module.exports = class Transaction {
 
 
     return this.sig !== undefined &&
-        utils.addressMatchesKey(this.from, this.pubKey) &&
+
         utils.verifySignature(this.pubKey, this.id, this.sig);
   }
 

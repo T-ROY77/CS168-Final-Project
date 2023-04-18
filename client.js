@@ -8,6 +8,7 @@ let utils = require('./utils.js');
 
 let wallet = require("./wallet");
 
+let crypto = require('crypto');
 
 
 
@@ -40,7 +41,7 @@ module.exports = class Client extends EventEmitter {
     this.wallet = new wallet({password: this.name});
 
 
-    this.address = utils.calcAddress(this.wallet.keyPair.public);
+    this.address = utils.calcAddress(this.wallet.keyPairChain[0].public);
 
     // Establishes order of transactions.  Incremented with each
     // new output transaction from this client.  This feature
@@ -164,28 +165,25 @@ module.exports = class Client extends EventEmitter {
    * @returns {Transaction} - The posted transaction.
    */
   postGenericTransaction(txData) {
-    // Creating a transaction, with defaults for the
-    // from, nonce, and pubKey fields.
-    let tx = Blockchain.makeTransaction(
-      Object.assign({
-          from: this.address,
-          nonce: this.nonce,
-          pubKey: this.wallet.keyPair.public,
-        },
-        txData));
 
-    tx.sign(this.wallet.keyPair.private);
-
-
-
-
-
-
-    //verify passphrase with wallet
+    //make a new keyPair for this transaction and add it to the chain
     //
-    this.wallet.verifyPassphrase();
+    this.wallet.keyPairChain.push(utils.generateKeypair());
+    console.log(this.wallet.keyPairChain);
 
 
+    // Creating a transaction, with defaults for the
+    // from, and nonce fields.
+    //pubkey field is new pubKey created
+    let tx = Blockchain.makeTransaction(
+        Object.assign({
+              from: this.address,
+              nonce: this.nonce,
+              pubKey: this.wallet.keyPairChain[this.wallet.keyPairChain.length-1].public,
+            },
+            txData));
+
+    tx.sign(this.wallet.keyPairChain[this.wallet.keyPairChain.length-1].private);
 
 
     // Adding transaction to pending.
