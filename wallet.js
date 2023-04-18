@@ -6,6 +6,15 @@
 
 let crypto = require('crypto');
 const fs = require('fs');
+const readline = require('readline');
+const utils = require("./utils");
+
+
+const rl =
+    readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
 
 
 const WORD_LIST_FILE = './english.json';
@@ -15,7 +24,7 @@ const NUM_BYTES = 33;
 const SALT_BASE = "mnemonic";
 const NUM_PBKDF2_ROUNDS = 2048;
 const KEY_LENGTH = 33; // 33 bytes = 264 bits == 24 word passphrase
-const PBKDF2_DIGEST = 'sha512'; // Should be 'hmac-sha512'
+const PBKDF2_DIGEST = 'sha512';
 
 /**
  * A wallet has a passphrase and a seed which is generated from pbkdf2
@@ -101,7 +110,7 @@ module.exports = class wallet {
      * @param {Object} obj - The properties of the client.
      * @param {String} [obj.password] - The client's password.
      */
-    constructor({password} = {}) {
+    constructor({password, keypair} = {}) {
 
         //setting the wordlist
         let content = fs.readFileSync(WORD_LIST_FILE);
@@ -117,17 +126,24 @@ module.exports = class wallet {
         // calculate passphrase
         this.passPhrase = this.words();
 
+        //keypair
+        if (keypair === undefined) {
+            this.keyPair = utils.generateKeypair();
+        } else {
+            this.keyPair = keypair;
+        }
+
         //show client passphrase
         this.printPassphrase();
         console.log(this.binKey);
 
         //verify wallet
-        this.verifyPassphrase();
+        //this.verifyPassphrase();
     }
 
 
-    get derivedSeed(){
-        return this.seq;
+    get binaryKey(){
+        return this.binKey;
     }
 
     //prints the passphrase stored in this.passphrase
@@ -190,9 +206,16 @@ module.exports = class wallet {
         console.log(phrase);
 
         //take UI
-        console.log("Enter word for number " + firstIndex + ". ");
+        //console.log("Enter word for number " + firstIndex + ". ");
         //take UI
         //firstInput = this.passphraseArr[firstIndex];
+
+        rl.question("Enter word for number " + firstIndex + ". ",  (string) => {
+            firstInput = string;
+            console.log("you entered: ${firstInput}");
+            // close input stream
+            rl.close();
+        });
 
         console.log("Enter word for number " + secondIndex + ". ");
         //take UI
@@ -214,6 +237,9 @@ module.exports = class wallet {
         if(thirdInput !== this.passphraseArr[thirdIndex]){
             verified = false;
         }
+
+
+
         console.log(verified);
         return verified;
     }

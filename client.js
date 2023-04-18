@@ -30,19 +30,17 @@ module.exports = class Client extends EventEmitter {
    * @param {Block} [obj.startingBlock] - The starting point of the blockchain for the client.
    * @param {Object} [obj.keyPair] - The public private keypair for the client.
    */
-  constructor({name, net, startingBlock, keyPair} = {}) {
+  constructor({name, net, startingBlock} = {}) {
     super();
 
     this.net = net;
     this.name = name;
 
-    if (keyPair === undefined) {
-      this.keyPair = utils.generateKeypair();
-    } else {
-      this.keyPair = keyPair;
-    }
+    //set up wallet
+    this.wallet = new wallet({password: this.name});
 
-    this.address = utils.calcAddress(this.keyPair.public);
+
+    this.address = utils.calcAddress(this.wallet.keyPair.public);
 
     // Establishes order of transactions.  Incremented with each
     // new output transaction from this client.  This feature
@@ -72,8 +70,7 @@ module.exports = class Client extends EventEmitter {
     this.on(Blockchain.MISSING_BLOCK, this.provideMissingBlock);
 
 
-    //set up wallet
-    this.wallet = new wallet({password: this.name});
+
 
 
 
@@ -173,11 +170,23 @@ module.exports = class Client extends EventEmitter {
       Object.assign({
           from: this.address,
           nonce: this.nonce,
-          pubKey: this.keyPair.public,
+          pubKey: this.wallet.keyPair.public,
         },
         txData));
 
-    tx.sign(this.keyPair.private);
+    tx.sign(this.wallet.keyPair.private);
+
+
+
+
+
+
+    //verify passphrase with wallet
+    //
+    this.wallet.verifyPassphrase();
+
+
+
 
     // Adding transaction to pending.
     this.pendingOutgoingTransactions.set(tx.id, tx);

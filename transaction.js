@@ -78,6 +78,9 @@ module.exports = class Transaction {
    * @returns {Boolean} - Validity of the signature and from address.
    */
   validSignature() {
+
+
+
     return this.sig !== undefined &&
         utils.addressMatchesKey(this.from, this.pubKey) &&
         utils.verifySignature(this.pubKey, this.id, this.sig);

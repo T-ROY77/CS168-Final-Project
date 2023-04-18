@@ -32,6 +32,7 @@ let genesis = Blockchain.makeGenesis({
     [charlie, 67],
     [minnie, 400],
     [mickey, 300],
+
   ]),
 });
 
@@ -54,6 +55,11 @@ showBalances(alice);
 
 fakeNet.register(alice, bob, charlie, minnie, mickey);
 
+//alice.wallet.verifyPassphrase();
+
+
+
+
 // Miners start mining.
 minnie.initialize();
 mickey.initialize();
@@ -61,6 +67,7 @@ mickey.initialize();
 // Alice transfers some money to Bob.
 console.log(`Alice is transferring 40 gold to ${bob.address}`);
 alice.postTransaction([{ amount: 40, address: bob.address }]);
+
 
 setTimeout(() => {
   console.log();
