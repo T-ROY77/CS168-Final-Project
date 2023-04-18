@@ -60,14 +60,22 @@ module.exports = class wallet {
         return bs;
     }
 
-    // Takes a buffer and returns an array of 11-bit unsigned ints
-    static split(seq) {
+    // Takes a buffer and returns a string in binary
+    static convertSeqtoBin(seq){
         // convert seq to binary string
         let bitString = '';
         for (let byte of seq.values()) {
             let bs = this.convertByteToBinString(byte);
             bitString += bs;
         }
+        return bitString;
+    }
+
+
+    // Takes a buffer and returns an array of 11-bit unsigned ints
+    static split(seq) {
+        // convert seq to binary string
+        let bitString = this.convertSeqtoBin(seq);
 
         // break up binary into 11bits
         let elevenBits = bitString.match(/.{11}/g);
@@ -104,12 +112,17 @@ module.exports = class wallet {
         // Creating the random sequence
         this.seq = crypto.pbkdf2Sync(this.password, SALT_BASE + Date.now().toString(), NUM_PBKDF2_ROUNDS, KEY_LENGTH, PBKDF2_DIGEST);
 
+        this.binKey = this.constructor.convertSeqtoBin(this.seq);
+
         // calculate passphrase
         this.passPhrase = this.words();
 
         //show client passphrase
         this.printPassphrase();
-        console.log(this.passphraseArr);
+        console.log(this.binKey);
+
+        //verify wallet
+        this.verifyPassphrase();
     }
 
 
