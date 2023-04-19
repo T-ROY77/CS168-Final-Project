@@ -6,8 +6,12 @@ let Blockchain = require('./blockchain.js');
 
 let utils = require('./utils.js');
 
+let wallet = require("./wallet");
+
+
 /**
- * A client has a public/private keypair and an address.
+ * A client has a wallet and an address.
+ * The wallet stores the client's public/private keypair.
  * It can send and receive messages on the Blockchain network.
  */
 module.exports = class Client extends EventEmitter {
@@ -25,19 +29,21 @@ module.exports = class Client extends EventEmitter {
    * @param {Block} [obj.startingBlock] - The starting point of the blockchain for the client.
    * @param {Object} [obj.keyPair] - The public private keypair for the client.
    */
-  constructor({name, net, startingBlock, keyPair} = {}) {
+  constructor({name, net, startingBlock} = {}) {
     super();
 
     this.net = net;
     this.name = name;
 
-    if (keyPair === undefined) {
-      this.keyPair = utils.generateKeypair();
-    } else {
-      this.keyPair = keyPair;
-    }
 
-    this.address = utils.calcAddress(this.keyPair.public);
+
+    //set up wallet
+    this.wallet = new wallet({password: this.name});
+
+
+
+
+    this.address = utils.calcAddress(this.wallet.keyPairChain[0].public);
 
     // Establishes order of transactions.  Incremented with each
     // new output transaction from this client.  This feature
@@ -126,6 +132,8 @@ module.exports = class Client extends EventEmitter {
    * @returns {Transaction} - The posted transaction.
    */
   postTransaction(outputs, fee=Blockchain.DEFAULT_TX_FEE) {
+
+
     // We calculate the total value of gold needed.
     let totalPayments = outputs.reduce((acc, {amount}) => acc + amount, 0) + fee;
 
@@ -153,17 +161,39 @@ module.exports = class Client extends EventEmitter {
    * @returns {Transaction} - The posted transaction.
    */
   postGenericTransaction(txData) {
-    // Creating a transaction, with defaults for the
-    // from, nonce, and pubKey fields.
-    let tx = Blockchain.makeTransaction(
-      Object.assign({
-          from: this.address,
-          nonce: this.nonce,
-          pubKey: this.keyPair.public,
-        },
-        txData));
 
-    tx.sign(this.keyPair.private);
+
+
+
+    //make a new keyPair for this transaction and add it to the chain
+    this.wallet.keyPairChain.push(utils.generateKeypair());
+
+
+
+
+    // Creating a transaction, with defaults for the
+    // from, and nonce fields.
+    //pubkey field is new pubKey created
+    let tx = Blockchain.makeTransaction(
+        Object.assign({
+              from: this.address,
+              nonce: this.nonce,
+              pubKey: this.wallet.keyPairChain[this.wallet.keyPairChain.length-1].public,
+            },
+            txData));
+
+    tx.sign(this.wallet.keyPairChain[this.wallet.keyPairChain.length-1].private);
+
+
+
+
+    //print transaction pubkey
+    console.log("Public key for this transaction: ");
+    console.log(tx.pubKey);
+
+
+
+
 
     // Adding transaction to pending.
     this.pendingOutgoingTransactions.set(tx.id, tx);

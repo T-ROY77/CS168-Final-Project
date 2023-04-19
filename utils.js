@@ -8,6 +8,7 @@ const SIG_ALG = 'RSA-SHA256';
 
 exports.hash = function hash(s, encoding) {
   encoding = encoding || 'hex';
+
   return crypto.createHash(HASH_ALG).update(s).digest(encoding);
 };
 

@@ -208,6 +208,8 @@ module.exports = class Block {
       this.nextNonce.set(tx.from, nonce + 1);
     }
 
+
+
     // Adding the transaction to the block
     this.transactions.set(tx.id, tx);
 
