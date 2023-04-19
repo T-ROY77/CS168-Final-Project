@@ -55,7 +55,24 @@ showBalances(alice);
 
 fakeNet.register(alice, bob, charlie, minnie, mickey);
 
-//alice.wallet.verifyPassphrase();
+
+
+//check randomly generated keys
+console.log();
+
+console.log();
+console.log("Alice's binary key: ");
+console.log(alice.wallet.binKey);
+
+console.log();
+console.log("Bob's binary key: ");
+console.log(bob.wallet.binKey);
+
+console.log();
+console.log("Charlies's binary key: ");
+console.log(charlie.wallet.binKey);
+
+console.log();
 
 
 
@@ -67,6 +84,14 @@ mickey.initialize();
 // Alice transfers some money to Bob.
 console.log(`Alice is transferring 40 gold to ${bob.address}`);
 alice.postTransaction([{ amount: 40, address: bob.address }]);
+
+
+
+// Alice transfers some money to Charlie.
+//This transaction will have a different keypair
+console.log(`Alice is transferring 7 gold to ${charlie.address}`);
+alice.postTransaction([{ amount: 7, address: charlie.address }]);
+
 
 
 setTimeout(() => {

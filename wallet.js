@@ -1,42 +1,37 @@
 "use strict";
 
-// let Blockchain = require('./blockchain.js');
-//
-// let utils = require('./utils.js');
-
 let crypto = require('crypto');
 const fs = require('fs');
-const readline = require('readline');
 const utils = require("./utils");
 
 
-const rl =
-    readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-
 const WORD_LIST_FILE = './english.json';
-const HASH_ALG = 'sha256';
-const NUM_BYTES = 33;
-
 const SALT_BASE = "mnemonic";
 const NUM_PBKDF2_ROUNDS = 2048;
 const KEY_LENGTH = 33; // 33 bytes = 264 bits == 24 word passphrase + 8-bit checksum
 const PBKDF2_DIGEST = 'sha512';
 
 /**
- * A wallet has a passphrase and a seed which is generated from pbkdf2
- * It can calculate the passphrase from the word list and show the client their personal passphrase
+ * A wallet has a seed which is generated from pbkdf2,
+ * a passphrase generated from the seed, and a binary key generated from the passphrase
+ *
+ * Every client has a wallet
  */
 module.exports = class wallet {
 
 
-    // Converts a byte to a string of zeroes and ones.
+    /**
+     * Converts a byte to a string of zeroes and ones.
+     *
+     * This method is used to convert a byte from the randomly generated seed into binary.
+     *
+     * @param {String} byte the byte to translate
+     *
+     * @return {String} the binary string
+     */
     static convertByteToBinString(byte) {
         let bs = "";
-        // Test each bit individually, appending either a 1 or a 0.
+        // Test each bit individually, adding either a 1 or a 0.
         bs += byte & 0x80 ? "1" : "0";
         bs += byte & 0x40 ? "1" : "0";
         bs += byte & 0x20 ? "1" : "0";
@@ -48,28 +43,15 @@ module.exports = class wallet {
         return bs;
     }
 
-    // Converts a string of zeroes and ones to a byte
-    static convertBinStringToByte(bs) {
-        return parseInt(bs, 2);
-    }
-
-    // Converts an 11-bit number to a string of 0's and 1's.
-    static translate11bit(n) {
-        let bitPosVal = 1024;
-        let bs = "";
-        while (bitPosVal >= 1) {
-            if (n >= bitPosVal) {
-                bs += "1";
-                n -= bitPosVal;
-            } else {
-                bs += "0";
-            }
-            bitPosVal = bitPosVal / 2;
-        }
-        return bs;
-    }
-
-    // Takes a buffer and returns a string in binary
+    /**
+     * Converts a buffer of bytes to a string in binary
+     *
+     * This method is used to convert the randomly generated seed into the binary key.
+     *
+     * @param {String} byte the buffer to translate
+     *
+     * @return {String} the binary key
+     */
     static convertSeqtoBin(seq){
         // convert seq to binary string
         let bitString = '';
@@ -81,7 +63,15 @@ module.exports = class wallet {
     }
 
 
-    // Takes a buffer and returns an array of 11-bit unsigned ints
+    /**
+     * Converts a buffer of bytes into an array of 11-bit unsigned ints
+     *
+     * This method is used to convert the randomly generated seed into the passphrase.
+     *
+     * @param {String} seq the buffer to translate
+     *
+     * @return {int[]} the array of ints
+     */
     static split(seq) {
         // convert seq to binary string
         let bitString = this.convertSeqtoBin(seq);
@@ -104,54 +94,54 @@ module.exports = class wallet {
 
 
     /**
-     * The password is used in the pbkdf function to calculate the random seed
+     * The password is used in the pbkdf function to calculate the random seed.
+     * The passphrase and binary key are calculated from the random seed.
+     *
      *
      * @constructor
-     * @param {Object} obj - The properties of the client.
-     * @param {String} [obj.password] - The client's password.
+     * @param {String} [obj.password] - The client's password. (set to client's name)
      */
     constructor({password} = {}) {
 
-        //setting the wordlist
+        //set the wordlist
         let content = fs.readFileSync(WORD_LIST_FILE);
         this.wordlist = JSON.parse(content);
 
+        //password for creating seed
         this.password = password;
 
-        // Creating the random sequence
-        this.seq = crypto.pbkdf2Sync(this.password, SALT_BASE + Date.now().toString(), NUM_PBKDF2_ROUNDS, KEY_LENGTH, PBKDF2_DIGEST);
+        //create the random seed
+        this.seed = crypto.pbkdf2Sync(this.password, SALT_BASE + Date.now().toString(), NUM_PBKDF2_ROUNDS, KEY_LENGTH, PBKDF2_DIGEST);
 
-        this.binKey = this.constructor.convertSeqtoBin(this.seq);
+        //calculate binary key from seed
+        this.binKey = this.constructor.convertSeqtoBin(this.seed);
 
-        // calculate passphrase
+        //calculate passphrase
         this.passPhrase = this.words();
 
         //keypair chain
         this.keyPairChain = [];
         this.keyPairChain.push(utils.generateKeypair());
 
-        //console.log(this.keyPairChain);
-
         //show client passphrase
         this.printPassphrase();
-        //console.log(this.binKey);
-
-        //verify wallet
-        //this.verifyPassphrase();
     }
 
-
-    get binaryKey(){
-        return this.binKey;
-    }
-
-    //prints the passphrase stored in this.passphrase
+    /**
+     * Prints the passphrase stored in this.passphrase
+     *
+     * This method is used to show the client their passphrase that was calculated from the
+     * randomly generated seed
+     */
     printPassphrase(){
         console.log("Passphrase for " + this.password);
 
         let phrase = "";
 
+        //split the passphrase string into an array of words
         let phraseArr = this.passPhrase.split(" ");
+
+        //print the index numbers along with the words
         for(let i = 1; i < phraseArr.length; i++){
             phrase = phrase + "" + i + ". " + phraseArr[i-1] + "  ";
             if(i % 4 == 0){
@@ -162,10 +152,18 @@ module.exports = class wallet {
         console.log(phrase);
     }
 
-    // Returns a string with the sequence of words matching to the random sequence.
+    /**
+     * Takes the randomly generated seed as an array of 11-bit numbers
+     * Converts each number into a word from the english.JSON file
+     *
+     * This method is used to calculate the 24 word passphrase from the randomly generated seed.
+     * This method is part of BIP-39
+     *
+     * @return {String} the 24 word passphrase as a space-delimited string
+     */
     words() {
-        // Returns an array of 11-bit numbers.
-        let arr = this.constructor.split(this.seq);
+        // gets the seed as an array of 11-bit numbers.
+        let arr = this.constructor.split(this.seed);
 
         // Convert 11-bit numbers to the corresponding words from the dictionary,
         // join together into a space-delimited string, and return the string.

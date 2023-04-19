@@ -8,12 +8,10 @@ let utils = require('./utils.js');
 
 let wallet = require("./wallet");
 
-let crypto = require('crypto');
-
-
 
 /**
- * A client has a public/private keypair and an address.
+ * A client has a wallet and an address.
+ * The wallet stores the client's public/private keypair.
  * It can send and receive messages on the Blockchain network.
  */
 module.exports = class Client extends EventEmitter {
@@ -37,8 +35,12 @@ module.exports = class Client extends EventEmitter {
     this.net = net;
     this.name = name;
 
+
+
     //set up wallet
     this.wallet = new wallet({password: this.name});
+
+
 
 
     this.address = utils.calcAddress(this.wallet.keyPairChain[0].public);
@@ -69,12 +71,6 @@ module.exports = class Client extends EventEmitter {
     // Setting up listeners to receive messages from other clients.
     this.on(Blockchain.PROOF_FOUND, this.receiveBlock);
     this.on(Blockchain.MISSING_BLOCK, this.provideMissingBlock);
-
-
-
-
-
-
   }
 
   /**
@@ -166,10 +162,13 @@ module.exports = class Client extends EventEmitter {
    */
   postGenericTransaction(txData) {
 
+
+
+
     //make a new keyPair for this transaction and add it to the chain
-    //
     this.wallet.keyPairChain.push(utils.generateKeypair());
-    console.log(this.wallet.keyPairChain);
+
+
 
 
     // Creating a transaction, with defaults for the
@@ -184,6 +183,16 @@ module.exports = class Client extends EventEmitter {
             txData));
 
     tx.sign(this.wallet.keyPairChain[this.wallet.keyPairChain.length-1].private);
+
+
+
+
+    //print transaction pubkey
+    console.log("Public key for this transaction: ");
+    console.log(tx.pubKey);
+
+
+
 
 
     // Adding transaction to pending.
